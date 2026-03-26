@@ -1,3 +1,4 @@
-import Expo from 'expo-router';
+import App from './App';
+import { registerRootComponent } from 'expo';
 
-export default Expo.ExpoRoot;
+registerRootComponent(App);
