@@ -45,10 +45,10 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Setup Expo CLI
-        run: npm install -g eas-cli expo-cli
+        run: npm install -g eas-cli
 
       - name: Prebuild Android
-        run: expo prebuild --platform android --clean --no-install
+        run: npx expo prebuild --platform android --clean --no-install
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -89,11 +89,8 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Setup Expo CLI
-        run: npm install -g expo-cli
-
       - name: Prebuild iOS
-        run: expo prebuild --platform ios --clean
+        run: npx expo prebuild --platform ios --clean
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1

@@ -5,13 +5,15 @@
     "version": "1.0.0",
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rajasekharcloud.rntestproject"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.rajasekharcloud.rntestproject"
     },
     "web": {
       "favicon": "./assets/favicon.png"
