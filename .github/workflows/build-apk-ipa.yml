@@ -1,0 +1,148 @@
+name: Build APK and IPA
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - apk
+          - ipa
+          - both
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+    name: Build Android APK
+    if: |
+      github.event_name == 'push' || 
+      github.event.inputs.build_type == 'apk' || 
+      github.event.inputs.build_type == 'both'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          ndk-version: '26.1.10909125'
+
+      - name: Make gradlew executable
+        run: chmod +x ./android/gradlew
+
+      - name: Build APK
+        working-directory: ./android
+        run: ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: ./android/app/build/outputs/apk/release/
+
+  build-ios-ipa:
+    runs-on: macos-latest
+    name: Build iOS IPA
+    if: |
+      github.event_name == 'push' || 
+      github.event.inputs.build_type == 'ipa' || 
+      github.event.inputs.build_type == 'both'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Expo CLI
+        run: npm install -g expo-cli
+
+      - name: Prebuild iOS
+        run: expo prebuild --platform ios --clean
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ./ios
+
+      - name: Install CocoaPods
+        working-directory: ./ios
+        run: pod install --repo-update
+
+      - name: Build IPA
+        run: |
+          xcodebuild -workspace ./ios/rn_test_project.xcworkspace \
+            -scheme rn_test_project \
+            -configuration Release \
+            -derivedDataPath "./build" \
+            -arch arm64 \
+            | xcpretty
+
+      - name: Create IPA
+        run: |
+          mkdir -p ./ipa
+          cp -r ./build/Build/Products/Release-iphoneos/rn_test_project.app ./ipa/
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: ./ipa/
+
+  release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    needs: [build-android-apk, build-ios-ipa]
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/download-artifact@v4
+
+      - name: Create Release Notes
+        run: |
+          echo "# Release ${{ github.ref_name }}" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "## Artifacts" >> RELEASE_NOTES.md
+          echo "- Android APK" >> RELEASE_NOTES.md
+          echo "- iOS IPA" >> RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            android-apk/**/*.apk
+            ios-ipa/**/*.app
+          body_path: RELEASE_NOTES.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
