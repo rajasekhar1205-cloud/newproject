@@ -21,8 +21,10 @@ jobs:
           node-version: '22'
           
       - name: Install dependencies
-        run: npm ci
-
+        run: |
+         npm ci --legacy-peer-deps
+         npm ci
+        
       - name: Run lint
         run: npm run lint
 
