@@ -44,6 +44,12 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Setup Expo CLI
+        run: npm install -g eas-cli expo-cli
+
+      - name: Prebuild Android
+        run: expo prebuild --platform android --clean --no-install
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
@@ -51,11 +57,11 @@ jobs:
           ndk-version: '26.1.10909125'
 
       - name: Make gradlew executable
-        run: chmod +x ./android/gradlew
+        run: chmod +x ./android/gradlew || chmod +x ./app/gradlew || find . -name "gradlew" -exec chmod +x {} \;
 
       - name: Build APK
         working-directory: ./android
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease || (cd .. && cd android && ./gradlew assembleRelease)
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
