@@ -48,7 +48,11 @@ jobs:
         run: npm install -g eas-cli
 
       - name: Prebuild Android
-        run: npx expo prebuild --platform android --clean --no-install
+        run: npx expo prebuild --platform android --clean
+
+      - name: Install Android dependencies
+        working-directory: ./android/app
+        run: npm install --legacy-peer-deps || true
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -61,7 +65,7 @@ jobs:
 
       - name: Build APK
         working-directory: ./android
-        run: ./gradlew assembleRelease || (cd .. && cd android && ./gradlew assembleRelease)
+        run: ./gradlew assembleRelease --stacktrace --info || (cd .. && cd android && ./gradlew assembleRelease --stacktrace --info)
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
