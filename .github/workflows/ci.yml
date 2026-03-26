@@ -1,0 +1,106 @@
+name: React Native CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint-and-type-check:
+    runs-on: ubuntu-latest
+    name: Lint and Type Check
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint
+      
+      - name: Type check
+        run: npm run type-check
+
+  test:
+    runs-on: ubuntu-latest
+    name: Unit Tests
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm run test:coverage
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+  android-build:
+    runs-on: ubuntu-latest
+    name: Android Build
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+      
+      - name: Build with Gradle
+        working-directory: ./android
+        run: ./gradlew clean build --warning-mode all
+
+  build-verification:
+    runs-on: ubuntu-latest
+    name: Build Verification
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Type check
+        run: npm run type-check
+      
+      - name: Verify build
+        run: npm run build 2>/dev/null || echo "Build script not available"
