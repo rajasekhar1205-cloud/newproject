@@ -1,4 +1,4 @@
-import { add, subtract, multiply, divide } from '../src/utils/math';
+import { add, subtract, multiply, divide } from '../utils/math';
 
 describe('Math utilities', () => {
   describe('add', () => {
