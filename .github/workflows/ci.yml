@@ -3,9 +3,8 @@ name: React Native CI
 on:
   push:
     branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-
+  
+  
 jobs:
   lint-and-type-check:
     runs-on: ubuntu-latest
