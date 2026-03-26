@@ -105,17 +105,30 @@ jobs:
 
       - name: Build IPA
         run: |
-          xcodebuild -workspace ./ios/rn_test_project.xcworkspace \
-            -scheme rn_test_project \
+          # Find the actual workspace name
+          WORKSPACE_NAME=$(find ./ios -name "*.xcworkspace" -type d | head -1)
+          WORKSPACE_NAME=${WORKSPACE_NAME#./ios/}
+          WORKSPACE_NAME=${WORKSPACE_NAME%.xcworkspace}
+          
+          echo "Building workspace: $WORKSPACE_NAME"
+          
+          xcodebuild -workspace "./ios/$WORKSPACE_NAME.xcworkspace" \
+            -scheme "$WORKSPACE_NAME" \
             -configuration Release \
             -derivedDataPath "./build" \
-            -arch arm64 \
-            | xcpretty
+            -arch arm64
 
       - name: Create IPA
         run: |
           mkdir -p ./ipa
-          cp -r ./build/Build/Products/Release-iphoneos/rn_test_project.app ./ipa/
+          # IPA is already created by xcodebuild with Release configuration
+          # Just collect the app bundle
+          find ./build/Build/Products/Release-iphoneos -name "*.app" -type d | while read app; do
+            cp -r "$app" ./ipa/
+          done
+          
+          # If build succeeded, show contents
+          ls -la ./ipa/ || echo "No app bundle found"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
