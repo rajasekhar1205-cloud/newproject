@@ -31,23 +31,20 @@ jobs:
       - name: Run tests
         run: npm test
 
-      # 👇 Replace Gradle build with Expo/EAS build
-      - name: Setup Expo CLI
-        run: npm install -g expo-cli
-
-      - name: Build Expo Android app
+      # 👇 Android build step for React Native CLI
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Build DevDebug APK
         if: github.ref == 'refs/heads/main'
-        run: npx expo export
+        working-directory: ./android   # ✅ corrected path
+        run: ./gradlew assembleDebug   # use assembleDebug for CLI projects
 
-      # If you want actual APKs/IPAs, use EAS Build instead:
-      # - name: Install EAS CLI
-      #   run: npm install -g eas-cli
-      #
-      # - name: Build Android APK with EAS
-      #   run: eas build --platform android --non-interactive
-
-      - name: Upload build artifacts
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: expo-build
-          path: dist/**
+          name: android-apks
+          path: android/app/build/outputs/apk/**/*.apk
