@@ -22,8 +22,8 @@ jobs:
           
       - name: Install dependencies
         run: |
-         npm ci --legacy-peer-deps
-         npm ci
+          npm ci --legacy-peer-deps
+          npm ci
         
       - name: Run lint
         run: npm run lint
@@ -31,22 +31,23 @@ jobs:
       - name: Run tests
         run: npm test
 
-      # 👇 Add Android build step
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          
-      - name: Build DevDebug APK
-        if: github.ref == 'refs/heads/main' 
-        working-directory: android
-        run: ./gradlew assembleDevDebug    
+      # 👇 Replace Gradle build with Expo/EAS build
+      - name: Setup Expo CLI
+        run: npm install -g expo-cli
 
-      - name: Upload APK
+      - name: Build Expo Android app
+        if: github.ref == 'refs/heads/main'
+        run: npx expo export
+
+      # If you want actual APKs/IPAs, use EAS Build instead:
+      # - name: Install EAS CLI
+      #   run: npm install -g eas-cli
+      #
+      # - name: Build Android APK with EAS
+      #   run: eas build --platform android --non-interactive
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: android-apks
-          path: android/app/build/outputs/apk/**/*.apk
-
-          
+          name: expo-build
+          path: dist/**
